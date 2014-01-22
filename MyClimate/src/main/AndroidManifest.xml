@@ -21,8 +21,6 @@
                 android:resource="@xml/myclimate_appwidget_info" />
         </receiver>
 
-        <service android:enabled="true" android:name="UpdateService"/>
-
     </application>
 
 </manifest>
