@@ -16,8 +16,7 @@ import java.io.IOException;
 public class UpdateService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d("WordWidget.UpdateService", "onStart()");
-        new UpdateTemperatureTask().execute("wtf");
+        new UpdateTemperatureTask().execute();
         return START_STICKY;
     }
 
@@ -26,33 +25,31 @@ public class UpdateService extends Service {
         return null;
     }
 
-    private class UpdateTemperatureTask extends AsyncTask<String, Void, Double> {
+    private class UpdateTemperatureTask extends AsyncTask<Object, Void, Double> {
         @Override
-        protected Double doInBackground(String... urls) {
+        protected Double doInBackground(Object... params) {
+            Log.d("MyClimateWidget.UpdateTemperatureTask", "task started");
             try {
                 return new WeatherNsuClient().getCurrentTemperature();
             } catch (IOException e) {
-                Log.e("WordWidget.UpdateService", "we're screwed", e);
+                Log.e("MyClimateWidget.UpdateTemperatureTask", "temperature acquisition failed", e);
             } catch (XmlPullParserException e) {
-                Log.e("WordWidget.UpdateService", "we're screwed", e);
+                Log.e("MyClimateWidget.UpdateTemperatureTask", "temperature acquisition failed", e);
             }
             return null;
         }
 
-       @Override
+        @Override
         protected void onPostExecute(Double outsideTemperature) {
-           RemoteViews updateViews = buildViewUpdate(outsideTemperature);
-           // Push update for this widget to the home screen
-           ComponentName thisWidget = new ComponentName(getApplication(), MyClimateAppWidgetProvider.class);
-           AppWidgetManager manager = AppWidgetManager.getInstance(getApplication());
-           manager.updateAppWidget(thisWidget, updateViews);
-           Log.d("WordWidget.UpdateService", "widget updated");
+            //TODO: what if outside temperature == null?
+            RemoteViews updateViews = buildViewUpdate(outsideTemperature);
+            // Push update for this widget to the home screen
+            ComponentName thisWidget = new ComponentName(getApplication(), MyClimateAppWidgetProvider.class);
+            AppWidgetManager manager = AppWidgetManager.getInstance(getApplication());
+            manager.updateAppWidget(thisWidget, updateViews);
+            Log.d("MyClimateWidget.UpdateTemperatureTask", "widget updated");
         }
 
-        /**
-         * Build a widget update to show the current Wiktionary
-         * "Word of the day." Will block until the online API returns.
-         */
         public RemoteViews buildViewUpdate(double outsideTemperature) {
             RemoteViews views = new RemoteViews(getPackageName(), R.layout.myclimate_appwidget);
             views.setTextViewText(R.id.textView, String.format("%.1f °C", outsideTemperature));
