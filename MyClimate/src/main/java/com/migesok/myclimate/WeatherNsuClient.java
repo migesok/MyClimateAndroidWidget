@@ -14,11 +14,15 @@ import java.net.URL;
 import static com.migesok.myclimate.IOUtils.closeQuietly;
 
 public class WeatherNsuClient {
+    private static final int TIMEOUT_MS = 1000 * 10; //10s
+
     public double getCurrentTemperature() throws IOException, XmlPullParserException {
         URL url = new URL("http://weather.nsu.ru/weather_brief.xml");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         InputStream responseStream = null;
         try {
+            connection.setConnectTimeout(TIMEOUT_MS);
+            connection.setReadTimeout(TIMEOUT_MS);
             responseStream = new BufferedInputStream(url.openStream());
             XmlPullParser parser = Xml.newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
