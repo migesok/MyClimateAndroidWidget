@@ -4,6 +4,7 @@ import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -14,13 +15,32 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 
+import static java.lang.String.format;
+
 public class MyClimateAppWidgetProvider extends AppWidgetProvider {
+    private static final long MAX_TIME_WITHOUT_UPDATE_MS = 1000L * 60L * 60L * 5L; // 5h
+
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
-        // To prevent any ANR timeouts, we perform the update in a service
         if (isNetworkAvailable(context)) {
             new UpdateTemperatureTask(context).execute();
+        } else if (isInfoOutdated(context)) {
+            updateViewsWithNoInfo(context, appWidgetManager);
         }
+    }
+
+    @Override
+    public void onDeleted(Context context, int[] appWidgetIds) {
+        SharedPreferences sharedPref = context.getSharedPreferences(
+                context.getString(R.string.widget_state_pref_file), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.clear();
+        editor.commit();
+        Log.d("MyClimateWidget.onDeleted", "widget state cleared");
+    }
+
+    private boolean isInfoOutdated(Context context) {
+        return (System.currentTimeMillis() - getLastUpdateTs(context)) > MAX_TIME_WITHOUT_UPDATE_MS;
     }
 
     private boolean isNetworkAvailable(Context context) {
@@ -28,6 +48,43 @@ public class MyClimateAppWidgetProvider extends AppWidgetProvider {
                 (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+    }
+
+    private long getLastUpdateTs(Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(
+                context.getString(R.string.widget_state_pref_file), Context.MODE_PRIVATE);
+        return sharedPref.getLong(context.getString(R.string.last_update_ts_key), 0L);
+    }
+
+    private void updateLastUpdateTs(Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(
+                context.getString(R.string.widget_state_pref_file), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putLong(context.getString(R.string.last_update_ts_key), System.currentTimeMillis());
+        editor.commit();
+        Log.d("MyClimateWidget", "last update timestamp updated");
+    }
+
+    private void updateViewsWithInfo(Context context,
+                                     AppWidgetManager manager,
+                                     double outsideTemperature) {
+        RemoteViews updatedViews =
+                new RemoteViews(context.getPackageName(), R.layout.myclimate_appwidget);
+        updatedViews.setTextViewText(R.id.textView,
+                format(context.getString(R.string.info_widget_text), outsideTemperature));
+        ComponentName widgetName = new ComponentName(context, MyClimateAppWidgetProvider.class);
+        manager.updateAppWidget(widgetName, updatedViews);
+        Log.d("MyClimateWidget", "widget updated with info");
+    }
+
+    private void updateViewsWithNoInfo(Context context,
+                                       AppWidgetManager manager) {
+        RemoteViews updatedViews =
+                new RemoteViews(context.getPackageName(), R.layout.myclimate_appwidget);
+        updatedViews.setTextViewText(R.id.textView, context.getString(R.string.no_info_widget_text));
+        ComponentName widgetName = new ComponentName(context, MyClimateAppWidgetProvider.class);
+        manager.updateAppWidget(widgetName, updatedViews);
+        Log.d("MyClimateWidget", "widget updated with no info");
     }
 
     private class UpdateTemperatureTask extends AsyncTask<Object, Void, Double> {
@@ -43,29 +100,23 @@ public class MyClimateAppWidgetProvider extends AppWidgetProvider {
             try {
                 return new WeatherNsuClient().getCurrentTemperature();
             } catch (IOException e) {
-                Log.e("MyClimateWidget.UpdateTemperatureTask", "temperature acquisition failed", e);
+                Log.d("MyClimateWidget.UpdateTemperatureTask", "temperature acquisition failed", e);
             } catch (XmlPullParserException e) {
-                Log.e("MyClimateWidget.UpdateTemperatureTask", "temperature acquisition failed", e);
+                Log.d("MyClimateWidget.UpdateTemperatureTask", "temperature acquisition failed", e);
             }
             return null;
         }
 
         @Override
         protected void onPostExecute(Double outsideTemperature) {
-            //TODO: what if outside temperature == null?
-            RemoteViews updateViews = buildViewUpdate(outsideTemperature);
-            // Push update for this widget to the home screen
-            ComponentName thisWidget = new ComponentName(context, MyClimateAppWidgetProvider.class);
             AppWidgetManager manager = AppWidgetManager.getInstance(context);
-            manager.updateAppWidget(thisWidget, updateViews);
-            Log.d("MyClimateWidget.UpdateTemperatureTask", "widget updated");
-        }
-
-        public RemoteViews buildViewUpdate(double outsideTemperature) {
-            RemoteViews views =
-                    new RemoteViews(context.getPackageName(), R.layout.myclimate_appwidget);
-            views.setTextViewText(R.id.textView, String.format("%.1f °C", outsideTemperature));
-            return views;
+            if (outsideTemperature != null) {
+                updateViewsWithInfo(context, manager, outsideTemperature);
+                updateLastUpdateTs(context);
+            } else if (isInfoOutdated(context)) {
+                updateViewsWithNoInfo(context, manager);
+            }
+            Log.d("MyClimateWidget.UpdateTemperatureTask", "task finished");
         }
     }
 }
