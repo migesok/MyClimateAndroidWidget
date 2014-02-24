@@ -14,7 +14,7 @@ import java.net.URL;
 import static com.migesok.myclimate.IOUtils.closeQuietly;
 
 public class WeatherNsuClient {
-    private static final int TIMEOUT_MS = 1000 * 10; //10s
+    private static final int TIMEOUT_MS = 1000 * 4; //4s
 
     public double getCurrentTemperature() throws IOException, XmlPullParserException {
         URL url = new URL("http://weather.nsu.ru/weather_brief.xml");
