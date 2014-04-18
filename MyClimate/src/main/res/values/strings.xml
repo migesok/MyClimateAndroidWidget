@@ -1,7 +1,5 @@
 <resources>
     <string name="app_name">MyClimate</string>
-    <string name="widget_state_pref_file">com.migesok.myclimate.WIDGET_STATE_PREF_FILE</string>
-    <string name="last_update_ts_key">LAST_UPDATE_TS_KEY</string>
     <string name="info_widget_text">%.1f °C</string>
     <string name="no_info_widget_text">--.- °C</string>
 </resources>

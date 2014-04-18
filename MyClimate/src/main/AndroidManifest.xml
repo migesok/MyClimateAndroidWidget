@@ -16,6 +16,8 @@
         <receiver android:name=".MyClimateAppWidgetProvider" >
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.appwidget.action.APPWIDGET_DISABLED" />
+                <action android:name="com.migesok.myclimate.FETCH_RESULT" />
             </intent-filter>
             <meta-data android:name="android.appwidget.provider"
                 android:resource="@xml/myclimate_appwidget_info" />
@@ -26,6 +28,8 @@
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE"/>
             </intent-filter>
         </receiver>
+
+        <service android:enabled="true" android:name=".FetchDataIntentService" />
 
     </application>
 

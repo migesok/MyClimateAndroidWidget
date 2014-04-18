@@ -16,7 +16,7 @@ import static com.migesok.myclimate.IOUtils.closeQuietly;
 public class WeatherNsuClient {
     private static final int TIMEOUT_MS = 1000 * 4; //4s
 
-    public double getCurrentTemperature() throws IOException, XmlPullParserException {
+    public float getCurrentTemperature() throws IOException, XmlPullParserException {
         URL url = new URL("http://weather.nsu.ru/weather_brief.xml");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         InputStream responseStream = null;
@@ -35,7 +35,7 @@ public class WeatherNsuClient {
         }
     }
 
-    private double readCurrentTemperature(XmlPullParser parser)
+    private float readCurrentTemperature(XmlPullParser parser)
             throws XmlPullParserException, IOException {
 
         parser.require(XmlPullParser.START_TAG, null, "weather");
@@ -52,9 +52,9 @@ public class WeatherNsuClient {
                 "unable to find current temperature value in the server response");
     }
 
-    private double readCurrent(XmlPullParser parser) throws IOException, XmlPullParserException {
+    private float readCurrent(XmlPullParser parser) throws IOException, XmlPullParserException {
         parser.require(XmlPullParser.START_TAG, null, "current");
-        double current = Double.parseDouble(readText(parser));
+        float current = Float.parseFloat(readText(parser));
         parser.require(XmlPullParser.END_TAG, null, "current");
         return current;
     }

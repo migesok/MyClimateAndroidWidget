@@ -12,9 +12,7 @@ public class NetworkStateListener extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         Log.d("MyClimateWidget", "Network listener fired!");
         if (isNetworkAvailable(context)) {
-            Log.d("MyClimateWidget", "Network is up!");
-            PendingResult pendingResult = goAsync();
-            new UpdateTemperatureTask(context, pendingResult).execute();
+            context.startService(new Intent(context, FetchDataIntentService.class));
         }
     }
 
