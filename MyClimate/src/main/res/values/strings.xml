@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">MyClimate</string>
-    <string name="info_widget_text">%.1f °C</string>
+    <string name="info_widget_text">%.0f °C</string>
     <string name="no_info_widget_text">--.- °C</string>
 </resources>
