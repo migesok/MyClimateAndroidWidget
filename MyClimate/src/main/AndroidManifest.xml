@@ -21,6 +21,12 @@
                 android:resource="@xml/myclimate_appwidget_info" />
         </receiver>
 
+        <receiver android:name=".NetworkStateListener" android:enabled="false">
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE"/>
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>
